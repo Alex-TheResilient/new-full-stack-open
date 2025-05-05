@@ -18,9 +18,9 @@ const app = express()
 app.use(express.static('dist'))
 app.use(express.json())
 
-app.get('/', (req, res) => {
-  res.send('<h1>Hello World!</h1>')
-})
+// app.get('/', (req, res) => {
+//   res.send('<h1>Hello World!</h1>')
+// })
 
 app.get('/api/persons', (request, response, next) => {
   Person.find({})
