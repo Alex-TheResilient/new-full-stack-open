@@ -107,18 +107,30 @@ const App = () => {
       // id: persons.length + 1
     };
 
-    personService.create(personObject).then((returnedPerson) => {
-      setPersons(persons.concat(returnedPerson));
-      setNewName("");
-      setNewNumber("");
-      setMessage({
-        text: `Added ${returnedPerson.name}`,
-        type: "success",
+    personService
+      .create(personObject)
+      .then((returnedPerson) => {
+        setPersons(persons.concat(returnedPerson));
+        setNewName("");
+        setNewNumber("");
+        setMessage({
+          text: `Added ${returnedPerson.name}`,
+          type: "success",
+        });
+        setTimeout(() => {
+          setMessage(null);
+        }, 1500);
+      })
+      .catch((error) => {
+        setMessage({
+          text: error.response.data.error,
+          type: "error",
+        });
+        setTimeout(() => {
+          setMessage(null);
+        }, 1500);
+        console.log(error.response.data.error);
       });
-      setTimeout(() => {
-        setMessage(null);
-      }, 1500);
-    });
   };
 
   const updatePersonNumber = (id) => {
