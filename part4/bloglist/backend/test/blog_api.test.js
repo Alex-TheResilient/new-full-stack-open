@@ -143,6 +143,48 @@ describe('when there is initially some blogs saved', () => {
     });
   });
 
+  describe('updating a blog', () => {
+    test('succeeds with a valid id', async () => {
+      const blogsAtStart = await helper.blogsInDb();
+      const blogToUpdate = blogsAtStart[0];
+
+      const updatedBlog = { ...blogToUpdate, likes: blogToUpdate.likes + 1 };
+
+      await api
+        .put(`/api/blogs/${blogToUpdate.id}`)
+        .send(updatedBlog)
+        .expect(200);
+
+      const blogsAtEnd = await helper.blogsInDb();
+      const updatedBlogAtEnd = blogsAtEnd.find(
+        (blog) => blog.id === blogToUpdate.id
+      );
+
+      assert.strictEqual(updatedBlogAtEnd.likes, blogToUpdate.likes + 1);
+    });
+
+    test('fails with statuscode 404 if blog does not exist', async () => {
+      const validNonexistingId = await helper.nonExistingId();
+      const blogToUpdate = {
+        likes: 1,
+      };
+
+      await api
+        .put(`/api/blogs/${validNonexistingId}`)
+        .send(blogToUpdate)
+        .expect(404);
+    });
+
+    test('fails with statuscode 400 if id is invalid', async () => {
+      const invalidId = '5a3d5da59070081a82a3445';
+      const blogToUpdate = {
+        likes: 1,
+      };
+
+      await api.put(`/api/blogs/${invalidId}`).send(blogToUpdate).expect(400);
+    });
+  });
+
   describe('deletion of a blog', () => {
     test('a blog can be deleted', async () => {
       const blogsAtStart = await helper.blogsInDb();
