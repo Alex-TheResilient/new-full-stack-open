@@ -1,21 +1,23 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Blog from './components/Blog';
 import blogService from './services/blogs';
 import loginService from './services/login';
 import Notification from './components/Notification';
+import LoginForm from './components/LoginForm';
+import BlogForm from './components/BlogForm';
+import Togglable from './components/Togglable';
 import './index.css';
 
 const App = () => {
   const [blogs, setBlogs] = useState([]);
-  const [title, setTitle] = useState('');
-  const [author, setAuthor] = useState('');
-  const [url, setUrl] = useState('');
-  const [likes, setLikes] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [user, setUser] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
   const [errorMessage, setErrorMessage] = useState(null);
+  const [loginVisible, setLoginVisible] = useState(false);
+
+  const blogFormRef = useRef();
 
   useEffect(() => {
     blogService.getAll().then((blogs) => setBlogs(blogs));
@@ -30,16 +32,8 @@ const App = () => {
     }
   }, []);
 
-  const addBlog = async (event) => {
-    event.preventDefault();
-    const blogObject = {
-      title: title,
-      author: author,
-      url: url,
-      likes: likes,
-      user: user.id,
-    };
-
+  const addBlog = (blogObject) => {
+    blogFormRef.current.toggleVisibility();
     blogService
       .create(blogObject)
       .then((newBlog) => {
@@ -47,14 +41,26 @@ const App = () => {
         setSuccessMessage(
           `a new blog ${newBlog.title} by ${newBlog.author} added`
         );
-        setTitle('');
-        setAuthor('');
-        setUrl('');
-        setLikes('');
+        setTimeout(() => {
+          setSuccessMessage(null);
+        }, 5000);
       })
       .catch((error) => {
-        console.error('Error creating blog:', error);
+        setErrorMessage('Blog creation failed');
+        setTimeout(() => {
+          setErrorMessage(null);
+        }, 5000);
       });
+  };
+
+  const updateBlog = (updatedBlog) => {
+    setBlogs(
+      blogs.map((blog) => (blog.id === updatedBlog.id ? updatedBlog : blog))
+    );
+  };
+
+  const removeBlog = (id) => {
+    setBlogs(blogs.filter((blog) => blog.id !== id));
   };
 
   const handleLogin = async (event) => {
@@ -85,102 +91,61 @@ const App = () => {
   };
 
   const loginForm = () => {
+    const hideWhenVisible = { display: loginVisible ? 'none' : '' };
+    const showWhenVisible = { display: loginVisible ? '' : 'none' };
+
     return (
-      <form onSubmit={handleLogin}>
-        <div>
-          username
-          <input
-            type="text"
-            value={username}
-            name="Username"
-            onChange={({ target }) => setUsername(target.value)}
-          />
+      <div>
+        <div style={hideWhenVisible}>
+          <button onClick={() => setLoginVisible(true)}>login</button>
         </div>
-        <div>
-          password
-          <input
-            type="password"
-            value={password}
-            name="Password"
-            onChange={({ target }) => setPassword(target.value)}
+        <div style={showWhenVisible}>
+          <LoginForm
+            username={username}
+            password={password}
+            handleUsernameChange={({ target }) => setUsername(target.value)}
+            handlePasswordChange={({ target }) => setPassword(target.value)}
+            handleSubmit={handleLogin}
           />
+          <button onClick={() => setLoginVisible(false)}>cancel</button>
         </div>
-        <button type="submit">login</button>
-      </form>
+      </div>
     );
   };
 
-  const blogForm = () => {
-    return (
-      <form onSubmit={addBlog}>
-        <div>
-          <h2>create new</h2>
-        </div>
-        <div>
-          title
-          <input
-            type="text"
-            value={title}
-            name="Title"
-            onChange={({ target }) => setTitle(target.value)}
-          />
-        </div>
-        <div>
-          author
-          <input
-            type="text"
-            value={author}
-            name="Author"
-            onChange={({ target }) => setAuthor(target.value)}
-          />
-        </div>
-        <div>
-          url
-          <input
-            type="text"
-            value={url}
-            name="Url"
-            onChange={({ target }) => setUrl(target.value)}
-          />
-        </div>
-        <div>
-          likes
-          <input
-            type="number"
-            value={likes}
-            name="Likes"
-            onChange={({ target }) => setLikes(target.value)}
-          />
-        </div>
-        <div>
-          user
-          <input type="text" value={user.name} name="User" readOnly />
-        </div>
-        <button type="submit">create</button>
-      </form>
-    );
-  };
+  const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes);
 
   // console.log('user', user)
 
   return (
     <div>
       <h2>blogs</h2>
+
       <Notification message={successMessage} type="success" />
       <Notification message={errorMessage} type="error" />
 
-      {!user && loginForm()}
-      {user && (
+      {user === null ? (
+        loginForm()
+      ) : (
         <div>
-          <p>{user.name} logged in</p>
-          <button onClick={handleLogout}>logout</button>
-          {blogForm()}
+          <p>
+            {user.name} logged in <button onClick={handleLogout}>logout</button>
+          </p>
+          <Togglable buttonLabel="new blog" ref={blogFormRef}>
+            <BlogForm createBlog={addBlog} />
+          </Togglable>
+
+          {sortedBlogs.map((blog) => (
+            <Blog
+              key={blog.id}
+              blog={blog}
+              updateBlog={updateBlog}
+              removeBlog={removeBlog}
+              user={user}
+            />
+          ))}
         </div>
       )}
-
-      {blogs.map((blog) => (
-        <Blog key={blog.id} blog={blog} />
-      ))}
     </div>
   );
 };
