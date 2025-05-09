@@ -36,12 +36,26 @@ blogsRouter.post('/', middleware.userExtractor, async (request, response) => {
 });
 
 blogsRouter.put('/:id', async (request, response) => {
-  const blog = await Blog.findById(request.params.id);
+  const body = request.body;
 
-  if (blog) {
-    blog.likes = request.body.likes;
-    await blog.save();
-    response.json(blog);
+  const userId =
+    typeof body.user === 'object' ? body.user.id || body.user._id : body.user;
+
+  const blog = {
+    title: body.title,
+    author: body.author,
+    url: body.url,
+    likes: body.likes,
+    user: userId,
+  };
+
+  const updatedBlog = await Blog.findByIdAndUpdate(request.params.id, blog, {
+    new: true,
+    runValidators: true,
+  }).populate('user', { username: 1, name: 1 });
+
+  if (updatedBlog) {
+    response.json(updatedBlog);
   } else {
     response.status(404).end();
   }
