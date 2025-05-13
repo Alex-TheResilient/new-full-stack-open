@@ -5,10 +5,15 @@ const baseUrl = 'http://localhost:3001/anecdotes';
 export const getAnecdotes = () =>
   axios.get(baseUrl).then((response) => response.data);
 
-export const createAnecdote = (newAnecdote) =>
-  axios.post(baseUrl, newAnecdote).then((response) => response.data);
+export const createAnecdote = async (newAnecdote) => {
+  const response = await axios.post(baseUrl, newAnecdote);
+  return response.data;
+};
 
-export const updateAnecdote = (updatedAnecdote) =>
-  axios
-    .put(`${baseUrl}/${updatedAnecdote.id}`, updatedAnecdote)
-    .then((response) => response.data);
+export const updateAnecdote = async (updatedAnecdote) => {
+  const response = await axios.put(
+    `${baseUrl}/${updatedAnecdote.id}`,
+    updatedAnecdote
+  );
+  return response.data;
+};
