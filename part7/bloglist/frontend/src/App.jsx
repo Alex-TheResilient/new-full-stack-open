@@ -1,8 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
+import { useDispatch } from 'react-redux';
+import { setNotification } from './reducers/notificationReducer';
+import Notification from './components/Notification';
+
 import Blog from './components/Blog';
 import blogService from './services/blogs';
 import loginService from './services/login';
-import Notification from './components/Notification';
 import LoginForm from './components/LoginForm';
 import BlogForm from './components/BlogForm';
 import Togglable from './components/Togglable';
@@ -13,11 +16,11 @@ const App = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [user, setUser] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-  const [errorMessage, setErrorMessage] = useState(null);
   const [loginVisible, setLoginVisible] = useState(false);
 
   const blogFormRef = useRef();
+
+  const dispatch = useDispatch();
 
   useEffect(() => {
     blogService.getAll().then((blogs) => setBlogs(blogs));
@@ -38,21 +41,17 @@ const App = () => {
       .create(blogObject)
       .then((newBlog) => {
         setBlogs(blogs.concat(newBlog));
-        setSuccessMessage(
-          `a new blog ${newBlog.title} by ${newBlog.author} added`
+        dispatch(
+          setNotification(
+            `a new blog ${newBlog.title} by ${newBlog.author} added`,
+            'success'
+          )
         );
-        setTimeout(() => {
-          setSuccessMessage(null);
-        }, 5000);
       })
       .catch((error) => {
-        setErrorMessage('Blog creation failed');
-        setTimeout(() => {
-          setErrorMessage(null);
-        }, 5000);
+        dispatch(setNotification('Blog creation failed', 'error'));
       });
   };
-
   const updateBlog = (updatedBlog) => {
     setBlogs(
       blogs.map((blog) => (blog.id === updatedBlog.id ? updatedBlog : blog))
@@ -77,11 +76,9 @@ const App = () => {
       setUser(user);
       setUsername('');
       setPassword('');
+      dispatch(setNotification(`Welcome ${user.name}`, 'success'));
     } catch (exception) {
-      setErrorMessage('Wrong username or password');
-      setTimeout(() => {
-        setErrorMessage(null);
-      }, 5000);
+      dispatch(setNotification('Wrong username or password', 'error'));
     }
   };
 
@@ -121,8 +118,7 @@ const App = () => {
     <div>
       <h2>blogs</h2>
 
-      <Notification message={successMessage} type="success" />
-      <Notification message={errorMessage} type="error" />
+      <Notification />
 
       {user === null ? (
         loginForm()
