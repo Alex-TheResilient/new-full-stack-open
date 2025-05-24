@@ -1,42 +1,63 @@
-const config = require('./utils/config');
-const express = require('express');
-require('express-async-errors');
-const app = express();
-const cors = require('cors');
+const logger = require('./logger');
+const jwt = require('jsonwebtoken');
+const User = require('../models/user');
 
-const blogsRouter = require('./controllers/blogs');
-const usersRouter = require('./controllers/users');
-const loginRouter = require('./controllers/login');
+const requestLogger = (request, response, next) => {
+  logger.info('Method:', request.method);
+  logger.info('Path:  ', request.path);
+  logger.info('Body:  ', request.body);
+  logger.info('---');
+  next();
+};
 
-const middleware = require('./utils/middleware');
-const logger = require('./utils/logger');
-const mongoose = require('mongoose');
+const tokenExtractor = (request, response, next) => {
+  const authorization = request.get('authorization');
+  if (authorization && authorization.startsWith('Bearer ')) {
+    request.token = authorization.replace('Bearer ', '');
+  } else {
+    request.token = null;
+  }
+  next();
+};
 
-mongoose.set('strictQuery', false);
+const userExtractor = async (request, response, next) => {
+  if (!request.token) {
+    return response.status(401).json({ error: 'token missing' });
+  }
 
-logger.info('connecting to', config.MONGODB_URI);
+  const decodedToken = jwt.verify(request.token, process.env.SECRET);
+  if (!decodedToken.id) {
+    return response.status(401).json({ error: 'invalid token' });
+  }
 
-mongoose
-  .connect(config.MONGODB_URI)
-  .then(() => {
-    logger.info('connected to MongoDB');
-  })
-  .catch((error) => {
-    logger.error('error connecting to MongoDB:', error.message);
-  });
+  request.user = await User.findById(decodedToken.id);
+  next();
+};
 
-app.use(cors());
-app.use(express.static('dist'));
-app.use(express.json());
-app.use(middleware.requestLogger);
-app.use(middleware.tokenExtractor);
+const unknownEndpoint = (request, response) => {
+  response.status(404).send({ error: 'unknown endpoint' });
+};
 
-// app.use('/api/blogs', middleware.userExtractor,blogsRouter)
-app.use('/api/blogs', blogsRouter);
-app.use('/api/users', usersRouter);
-app.use('/api/login', loginRouter);
+const errorHandler = (error, request, response, next) => {
+  logger.error(error.message);
 
-app.use(middleware.unknownEndpoint);
-app.use(middleware.errorHandler);
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' });
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message });
+  } else if (error.name === 'JsonWebTokenError') {
+    return response.status(401).json({ error: 'invalid token' });
+  } else if (error.name === 'TokenExpiredError') {
+    return response.status(401).json({ error: 'token expired' });
+  }
 
-module.exports = app;
+  next(error);
+};
+
+module.exports = {
+  requestLogger,
+  unknownEndpoint,
+  errorHandler,
+  tokenExtractor,
+  userExtractor,
+};
