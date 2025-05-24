@@ -1,9 +1,7 @@
 import { useState } from 'react';
-import blogService from '../services/blogs';
 
 const Blog = ({ blog, updateBlog, removeBlog, user }) => {
   const [visible, setVisible] = useState(false);
-  const [likes, setLikes] = useState(blog.likes);
 
   const blogStyle = {
     paddingTop: 10,
@@ -21,17 +19,14 @@ const Blog = ({ blog, updateBlog, removeBlog, user }) => {
     try {
       const updatedBlog = {
         ...blog,
-        likes: likes + 1,
+        likes: blog.likes + 1,
         user:
           typeof blog.user === 'object'
             ? blog.user.id || blog.user._id
             : blog.user,
       };
 
-      const returnedBlog = await blogService.update(blog.id, updatedBlog);
-      setLikes(returnedBlog.likes);
-
-      updateBlog(returnedBlog);
+      updateBlog(updatedBlog);
     } catch (error) {
       console.error('Error updating likes:', error);
     }
@@ -40,7 +35,6 @@ const Blog = ({ blog, updateBlog, removeBlog, user }) => {
   const handleDelete = async () => {
     if (window.confirm(`Remove blog ${blog.title} by ${blog.author}?`)) {
       try {
-        await blogService.remove(blog.id);
         removeBlog(blog.id);
       } catch (error) {
         console.error('Error deleting blog:', error);
@@ -49,8 +43,8 @@ const Blog = ({ blog, updateBlog, removeBlog, user }) => {
   };
 
   const isOwner = () => {
-    console.log('Current user:', user);
-    console.log('Blog user:', blog.user);
+    // console.log('Current user:', user);
+    // console.log('Blog user:', blog.user);
 
     // Handle missing data
     if (!user || !blog.user) return false;
@@ -88,7 +82,7 @@ const Blog = ({ blog, updateBlog, removeBlog, user }) => {
         <div>
           <div>{blog.url}</div>
           <div>
-            likes {likes}
+            likes {blog.likes}
             <button onClick={handleLike}>like</button>
           </div>
           <div>{blog.user?.name}</div>
