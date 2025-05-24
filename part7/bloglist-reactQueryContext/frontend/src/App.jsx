@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Blog from './components/Blog';
 import blogService from './services/blogs';
@@ -8,16 +8,15 @@ import LoginForm from './components/LoginForm';
 import BlogForm from './components/BlogForm';
 import Togglable from './components/Togglable';
 import { useNotification } from './contexts/NotificationContext.jsx';
-import './index.css';
-
+import { useUser } from './contexts/UserContext.jsx';
 import './index.css';
 
 const App = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [user, setUser] = useState(null);
   const [loginVisible, setLoginVisible] = useState(false);
   const { notificationDispatch } = useNotification();
+  const { user, userDispatch } = useUser();
 
   const blogFormRef = useRef();
   const queryClient = useQueryClient();
@@ -64,15 +63,6 @@ const App = () => {
     },
   });
 
-  useEffect(() => {
-    const loggedUserJSON = window.localStorage.getItem('loggedBlogappUser');
-    if (loggedUserJSON) {
-      const user = JSON.parse(loggedUserJSON);
-      setUser(user);
-      blogService.setToken(user.token);
-    }
-  }, []);
-
   const showNotification = (message, type) => {
     notificationDispatch({
       type: 'SET_NOTIFICATION',
@@ -109,9 +99,10 @@ const App = () => {
       });
 
       window.localStorage.setItem('loggedBlogappUser', JSON.stringify(user));
-
       blogService.setToken(user.token);
-      setUser(user);
+
+      userDispatch({ type: 'SET_USER', payload: user });
+
       setUsername('');
       setPassword('');
       showNotification(`Welcome ${user.name}`, 'success');
@@ -122,7 +113,8 @@ const App = () => {
 
   const handleLogout = () => {
     window.localStorage.removeItem('loggedBlogappUser');
-    setUser(null);
+    userDispatch({ type: 'CLEAR_USER' });
+    blogService.setToken(null);
   };
 
   const loginForm = () => {
@@ -158,8 +150,6 @@ const App = () => {
 
   const blogs = result.data;
   const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes);
-
-  // console.log('user', user)
 
   return (
     <div>
