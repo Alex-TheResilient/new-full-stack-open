@@ -7,11 +7,10 @@ import {
   likeBlog,
   removeBlog,
 } from './reducers/blogReducer';
+import { loginUser, logoutUser, initializeUser } from './reducers/userReducer';
 import Notification from './components/Notification';
 
 import Blog from './components/Blog';
-import blogService from './services/blogs';
-import loginService from './services/login';
 import LoginForm from './components/LoginForm';
 import BlogForm from './components/BlogForm';
 import Togglable from './components/Togglable';
@@ -20,26 +19,21 @@ import './index.css';
 const App = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [user, setUser] = useState(null);
   const [loginVisible, setLoginVisible] = useState(false);
 
   const blogFormRef = useRef();
 
   const dispatch = useDispatch();
   const blogs = useSelector((state) => state.blogs);
+  const user = useSelector((state) => state.user);
 
   useEffect(() => {
     dispatch(initializeBlogs());
-  }, []);
+  }, [dispatch]);
 
   useEffect(() => {
-    const loggedUserJSON = window.localStorage.getItem('loggedBlogappUser');
-    if (loggedUserJSON) {
-      const user = JSON.parse(loggedUserJSON);
-      setUser(user);
-      blogService.setToken(user.token);
-    }
-  }, []);
+    dispatch(initializeUser());
+  }, [dispatch]);
 
   const addBlog = async (blogObject) => {
     blogFormRef.current.toggleVisibility();
@@ -80,15 +74,13 @@ const App = () => {
   const handleLogin = async (event) => {
     event.preventDefault();
     try {
-      const user = await loginService.login({
-        username,
-        password,
-      });
+      const user = await dispatch(
+        loginUser({
+          username,
+          password,
+        })
+      );
 
-      window.localStorage.setItem('loggedBlogappUser', JSON.stringify(user));
-
-      blogService.setToken(user.token);
-      setUser(user);
       setUsername('');
       setPassword('');
       dispatch(setNotification(`Welcome ${user.name}`, 'success'));
@@ -98,8 +90,7 @@ const App = () => {
   };
 
   const handleLogout = () => {
-    window.localStorage.removeItem('loggedBlogappUser');
-    setUser(null);
+    dispatch(logoutUser());
   };
 
   const loginForm = () => {
