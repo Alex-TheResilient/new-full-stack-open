@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { initializeUsers } from '../reducers/usersReducer';
+import { Card, ListGroup } from 'react-bootstrap';
 
 const UserView = () => {
   const dispatch = useDispatch();
@@ -13,21 +14,29 @@ const UserView = () => {
     dispatch(initializeUsers());
   }, [dispatch]);
 
-  // Renderizado condicional para evitar error cuando aún no hay datos
   if (!user) {
     return null;
   }
 
   return (
-    <div>
-      <h2>{user.name}</h2>
-      <h3>Added blogs</h3>
-      <ul>
-        {user.blogs.map((blog) => (
-          <li key={blog.id}>{blog.title}</li>
-        ))}
-      </ul>
-    </div>
+    <Card>
+      <Card.Body>
+        <Card.Title>{user.name}</Card.Title>
+        <h5 className="mt-3">Added blogs</h5>
+
+        {user.blogs.length > 0 ? (
+          <ListGroup variant="flush">
+            {user.blogs.map((blog) => (
+              <ListGroup.Item key={blog.id}>
+                <Link to={`/blogs/${blog.id}`}>{blog.title}</Link>
+              </ListGroup.Item>
+            ))}
+          </ListGroup>
+        ) : (
+          <p className="text-muted">No blogs added yet</p>
+        )}
+      </Card.Body>
+    </Card>
   );
 };
 

@@ -1,20 +1,22 @@
+import { Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
 const Blog = ({ blog }) => {
-  const blogStyle = {
-    paddingTop: 10,
-    paddingLeft: 2,
-    border: 'solid',
-    borderWidth: 1,
-    marginBottom: 5,
-  };
-
   return (
-    <div className="blog" style={blogStyle}>
-      <Link to={`/blogs/${blog.id}`}>
-        {blog.title} {blog.author}
-      </Link>
-    </div>
+    <Card className="mb-3">
+      <Card.Body>
+        <Link
+          to={`/blogs/${blog.id}`}
+          style={{ textDecoration: 'none' }}
+          className="text-dark"
+        >
+          <Card.Title>{blog.title}</Card.Title>
+          <Card.Subtitle className="mb-2 text-muted">
+            by {blog.author}
+          </Card.Subtitle>
+        </Link>
+      </Card.Body>
+    </Card>
   );
 };
 

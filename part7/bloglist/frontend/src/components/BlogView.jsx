@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { likeBlog, removeBlog, addComment } from '../reducers/blogReducer';
 import { setNotification } from '../reducers/notificationReducer';
 import { useNavigate } from 'react-router-dom';
+import { Card, Button, Form, ListGroup, Badge } from 'react-bootstrap';
 
 const BlogView = () => {
   const { id } = useParams();
@@ -72,42 +73,62 @@ const BlogView = () => {
   };
 
   return (
-    <div>
-      <h2>
-        {blog.title} {blog.author}
-      </h2>
-      <div>
-        <a href={blog.url}>{blog.url}</a>
-      </div>
-      <div>
-        {blog.likes} likes <button onClick={handleLike}>like</button>
-      </div>
-      <div>added by {blog.user?.name || 'unknown'}</div>
-      {isOwner() && <button onClick={handleRemove}>remove</button>}
+    <Card>
+      <Card.Body>
+        <Card.Title>{blog.title}</Card.Title>
+        <Card.Subtitle className="mb-2 text-muted">
+          by {blog.author}
+        </Card.Subtitle>
 
-      <h3>Comments</h3>
-      <form onSubmit={handleAddComment}>
-        <div>
-          <input
-            type="text"
-            value={comment}
-            onChange={({ target }) => setComment(target.value)}
-            placeholder="Add a comment..."
-          />
-          <button type="submit">add comment</button>
+        <Card.Text>
+          <a href={blog.url}>{blog.url}</a>
+        </Card.Text>
+
+        <div className="mb-3">
+          <Badge bg="primary" className="me-2">
+            {blog.likes} {blog.likes === 1 ? 'like' : 'likes'}
+          </Badge>
+          <Button variant="outline-primary" size="sm" onClick={handleLike}>
+            Like
+          </Button>
         </div>
-      </form>
 
-      {blog.comments && blog.comments.length > 0 ? (
-        <ul>
-          {blog.comments.map((comment, index) => (
-            <li key={index}>{comment}</li>
-          ))}
-        </ul>
-      ) : (
-        <p>No comments yet.</p>
-      )}
-    </div>
+        <Card.Text className="text-muted">
+          Added by {blog.user?.name || 'unknown'}
+        </Card.Text>
+
+        {isOwner() && (
+          <Button variant="danger" size="sm" onClick={handleRemove}>
+            Remove
+          </Button>
+        )}
+
+        <h5 className="mt-4">Comments</h5>
+        <Form onSubmit={handleAddComment} className="mb-3">
+          <Form.Group className="mb-2 d-flex">
+            <Form.Control
+              type="text"
+              value={comment}
+              onChange={({ target }) => setComment(target.value)}
+              placeholder="Add a comment..."
+            />
+            <Button variant="primary" type="submit" className="ms-2">
+              Add
+            </Button>
+          </Form.Group>
+        </Form>
+
+        {blog.comments && blog.comments.length > 0 ? (
+          <ListGroup>
+            {blog.comments.map((comment, index) => (
+              <ListGroup.Item key={index}>{comment}</ListGroup.Item>
+            ))}
+          </ListGroup>
+        ) : (
+          <p className="text-muted">No comments yet.</p>
+        )}
+      </Card.Body>
+    </Card>
   );
 };
 

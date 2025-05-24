@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setNotification } from './reducers/notificationReducer';
 import {
@@ -9,6 +9,7 @@ import {
   removeBlog,
 } from './reducers/blogReducer';
 import { loginUser, logoutUser, initializeUser } from './reducers/userReducer';
+import { Container, Row, Col, Button } from 'react-bootstrap';
 
 import Notification from './components/Notification';
 import Togglable from './components/Togglable';
@@ -125,45 +126,48 @@ const App = () => {
 
   if (user === null) {
     return (
-      <div>
-        <h2>blogs</h2>
+      <Container>
+        <h2 className="mt-4 mb-4">Blog App</h2>
         <Notification />
         {loginForm()}
-      </div>
+      </Container>
     );
   }
   // console.log('user', user)
 
   return (
     <Router>
-      <div>
+      <Navigation user={user} handleLogout={handleLogout} />
+      <Container>
         <Notification />
-        <Navigation user={user} handleLogout={handleLogout} />
 
         <Routes>
           <Route
             path="/"
             element={
               <div>
-                <h2>Blogs</h2>
+                <h2 className="mb-4">Blogs</h2>
 
-                <Togglable buttonLabel="new blog" ref={blogFormRef}>
+                <Togglable buttonLabel="New Blog" ref={blogFormRef}>
                   <BlogForm createBlog={addBlog} />
                 </Togglable>
 
-                {sortedBlogs.map((blog) => (
-                  <Blog key={blog.id} blog={blog} />
-                ))}
+                <Row>
+                  {sortedBlogs.map((blog) => (
+                    <Col md={6} lg={4} key={blog.id} className="mb-3">
+                      <Blog blog={blog} />
+                    </Col>
+                  ))}
+                </Row>
               </div>
             }
           />
           <Route path="/users" element={<Users />} />
           <Route path="/users/:id" element={<UserView />} />
-          <Route path="/blogs/:id" element={<BlogView />} /> {/* Nueva ruta */}
+          <Route path="/blogs/:id" element={<BlogView />} />
         </Routes>
-      </div>
+      </Container>
     </Router>
   );
 };
-
 export default App;
