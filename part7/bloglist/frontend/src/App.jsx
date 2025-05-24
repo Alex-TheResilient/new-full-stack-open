@@ -1,7 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { setNotification } from './reducers/notificationReducer';
-import { initializeBlogs, createBlog } from './reducers/blogReducer';
+import {
+  initializeBlogs,
+  createBlog,
+  likeBlog,
+  removeBlog,
+} from './reducers/blogReducer';
 import Notification from './components/Notification';
 
 import Blog from './components/Blog';
@@ -51,14 +56,25 @@ const App = () => {
     }
   };
 
-  const updateBlog = (updatedBlog) => {
-    setBlogs(
-      blogs.map((blog) => (blog.id === updatedBlog.id ? updatedBlog : blog))
-    );
+  const updateBlog = async (updatedBlog) => {
+    try {
+      await dispatch(likeBlog(updatedBlog));
+      dispatch(setNotification(`You liked '${updatedBlog.title}'`, 'success'));
+    } catch (error) {
+      // console.log('Error updating blog:', error);
+      dispatch(setNotification('Failed to update blog', 'error'));
+    }
   };
 
-  const removeBlog = (id) => {
-    setBlogs(blogs.filter((blog) => blog.id !== id));
+  const handleRemoveBlog = async (id, title, author) => {
+    if (window.confirm(`Remove blog ${title} by ${author}?`)) {
+      try {
+        await dispatch(removeBlog(id)); // Ahora llama correctamente al action creator
+        dispatch(setNotification(`Blog '${title}' was removed`, 'success'));
+      } catch (error) {
+        dispatch(setNotification('Failed to remove blog', 'error'));
+      }
+    }
   };
 
   const handleLogin = async (event) => {
@@ -134,8 +150,10 @@ const App = () => {
             <Blog
               key={blog.id}
               blog={blog}
-              updateBlog={updateBlog}
-              removeBlog={removeBlog}
+              updateBlog={() => updateBlog(blog)}
+              removeBlog={() =>
+                handleRemoveBlog(blog.id, blog.title, blog.author)
+              }
               user={user}
             />
           ))}
