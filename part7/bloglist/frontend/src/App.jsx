@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { setNotification } from './reducers/notificationReducer';
 import {
@@ -15,13 +16,13 @@ import LoginForm from './components/LoginForm';
 import BlogForm from './components/BlogForm';
 import Togglable from './components/Togglable';
 import Users from './components/Users';
+import UserView from './components/UserView';
 import './index.css';
 
 const App = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loginVisible, setLoginVisible] = useState(false);
-  const [page, setPage] = useState('blogs');
 
   const blogFormRef = useRef();
 
@@ -120,53 +121,59 @@ const App = () => {
 
   const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes);
 
+  if (user === null) {
+    return (
+      <div>
+        <h2>blogs</h2>
+        <Notification />
+        {loginForm()}
+      </div>
+    );
+  }
   // console.log('user', user)
 
   return (
-    <div>
-      <h2>blogs</h2>
-
-      <Notification />
-
-      {user === null ? (
-        loginForm()
-      ) : (
+    <Router>
+      <div>
         <div>
+          <h2>blogs</h2>
+          <Notification />
+          <p>
+            {user.name} logged in <button onClick={handleLogout}>logout</button>
+          </p>
           <div>
-            <p>{user.name} logged in</p>
-            <button onClick={handleLogout}>logout</button>
-            <p>
-              <h4>Show</h4>
-              <button onClick={() => setPage('blogs')}>blogs</button>
-              <button onClick={() => setPage('users')}>users</button>
-            </p>
+            <Link to="/">blogs</Link> | <Link to="/users">users</Link>
           </div>
-
-          {page === 'blogs' && (
-            <div>
-              <Togglable buttonLabel="new blog" ref={blogFormRef}>
-                <BlogForm createBlog={addBlog} />
-              </Togglable>
-
-              {sortedBlogs.map((blog) => (
-                <Blog
-                  key={blog.id}
-                  blog={blog}
-                  updateBlog={() => updateBlog(blog)}
-                  removeBlog={() =>
-                    handleRemoveBlog(blog.id, blog.title, blog.author)
-                  }
-                  user={user}
-                />
-              ))}
-            </div>
-          )}
-
-          {page === 'users' && <Users />}
         </div>
-      )}
-    </div>
+
+        <Routes>
+          <Route
+            path="/"
+            element={
+              <div>
+                <Togglable buttonLabel="new blog" ref={blogFormRef}>
+                  <BlogForm createBlog={addBlog} />
+                </Togglable>
+
+                {sortedBlogs.map((blog) => (
+                  <Blog
+                    key={blog.id}
+                    blog={blog}
+                    updateBlog={() => updateBlog(blog)}
+                    removeBlog={() =>
+                      handleRemoveBlog(blog.id, blog.title, blog.author)
+                    }
+                    user={user}
+                  />
+                ))}
+              </div>
+            }
+          />
+          <Route path="/users" element={<Users />} />
+          <Route path="/users/:id" element={<UserView />} />
+        </Routes>
+      </div>
+    </Router>
   );
 };
-
 export default App;
