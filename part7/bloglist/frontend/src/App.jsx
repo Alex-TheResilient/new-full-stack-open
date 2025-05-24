@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { setNotification } from './reducers/notificationReducer';
+import { initializeBlogs, createBlog } from './reducers/blogReducer';
 import Notification from './components/Notification';
 
 import Blog from './components/Blog';
@@ -12,7 +13,6 @@ import Togglable from './components/Togglable';
 import './index.css';
 
 const App = () => {
-  const [blogs, setBlogs] = useState([]);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [user, setUser] = useState(null);
@@ -21,9 +21,10 @@ const App = () => {
   const blogFormRef = useRef();
 
   const dispatch = useDispatch();
+  const blogs = useSelector((state) => state.blogs);
 
   useEffect(() => {
-    blogService.getAll().then((blogs) => setBlogs(blogs));
+    dispatch(initializeBlogs());
   }, []);
 
   useEffect(() => {
@@ -35,23 +36,21 @@ const App = () => {
     }
   }, []);
 
-  const addBlog = (blogObject) => {
+  const addBlog = async (blogObject) => {
     blogFormRef.current.toggleVisibility();
-    blogService
-      .create(blogObject)
-      .then((newBlog) => {
-        setBlogs(blogs.concat(newBlog));
-        dispatch(
-          setNotification(
-            `a new blog ${newBlog.title} by ${newBlog.author} added`,
-            'success'
-          )
-        );
-      })
-      .catch((error) => {
-        dispatch(setNotification('Blog creation failed', 'error'));
-      });
+    try {
+      const newBlog = await dispatch(createBlog(blogObject));
+      dispatch(
+        setNotification(
+          `a new blog ${newBlog.title} by ${newBlog.author} added`,
+          'success'
+        )
+      );
+    } catch (error) {
+      dispatch(setNotification('Blog creation failed', 'error'));
+    }
   };
+
   const updateBlog = (updatedBlog) => {
     setBlogs(
       blogs.map((blog) => (blog.id === updatedBlog.id ? updatedBlog : blog))
