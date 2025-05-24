@@ -11,13 +11,14 @@ import {
 import { loginUser, logoutUser, initializeUser } from './reducers/userReducer';
 
 import Notification from './components/Notification';
-import Blog from './components/Blog';
-import LoginForm from './components/LoginForm';
-import BlogForm from './components/BlogForm';
 import Togglable from './components/Togglable';
+import LoginForm from './components/LoginForm';
+import Blog from './components/Blog';
+import BlogForm from './components/BlogForm';
+import BlogView from './components/BlogView';
 import Users from './components/Users';
 import UserView from './components/UserView';
-import BlogView from './components/BlogView';
+import Navigation from './components/Navigation';
 import './index.css';
 
 const App = () => {
@@ -136,31 +137,16 @@ const App = () => {
   return (
     <Router>
       <div>
-        <div>
-          <h2>blogs</h2>
-          <Notification />
-          <p>
-            {user.name} logged in <button onClick={handleLogout}>logout</button>
-          </p>
-          <div
-            style={{
-              marginBottom: '20px',
-              padding: '10px',
-              background: '#f0f0f0',
-            }}
-          >
-            <Link to="/" style={{ marginRight: '10px' }}>
-              blogs
-            </Link>
-            <Link to="/users">users</Link>
-          </div>
-        </div>
+        <Notification />
+        <Navigation user={user} handleLogout={handleLogout} />
 
         <Routes>
           <Route
             path="/"
             element={
               <div>
+                <h2>Blogs</h2>
+
                 <Togglable buttonLabel="new blog" ref={blogFormRef}>
                   <BlogForm createBlog={addBlog} />
                 </Togglable>
