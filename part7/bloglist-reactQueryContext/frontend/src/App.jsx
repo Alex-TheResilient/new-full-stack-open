@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import Blog from './components/Blog';
 import blogService from './services/blogs';
 import loginService from './services/login';
@@ -7,11 +8,11 @@ import LoginForm from './components/LoginForm';
 import BlogForm from './components/BlogForm';
 import Togglable from './components/Togglable';
 import { useNotification } from './contexts/NotificationContext.jsx';
+import './index.css';
 
 import './index.css';
 
 const App = () => {
-  const [blogs, setBlogs] = useState([]);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [user, setUser] = useState(null);
@@ -19,10 +20,27 @@ const App = () => {
   const { notificationDispatch } = useNotification();
 
   const blogFormRef = useRef();
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    blogService.getAll().then((blogs) => setBlogs(blogs));
-  }, []);
+  const result = useQuery({
+    queryKey: ['blogs'],
+    queryFn: blogService.getAll,
+  });
+
+  const newBlogMutation = useMutation({
+    mutationFn: blogService.create,
+    onSuccess: (newBlog) => {
+      queryClient.invalidateQueries({ queryKey: ['blogs'] });
+      showNotification(
+        `a new blog ${newBlog.title} by ${newBlog.author} added`,
+        'success'
+      );
+      blogFormRef.current.toggleVisibility();
+    },
+    onError: () => {
+      showNotification('Blog creation failed', 'error');
+    },
+  });
 
   useEffect(() => {
     const loggedUserJSON = window.localStorage.getItem('loggedBlogappUser');
@@ -44,29 +62,23 @@ const App = () => {
   };
 
   const addBlog = (blogObject) => {
-    blogFormRef.current.toggleVisibility();
-    blogService
-      .create(blogObject)
-      .then((newBlog) => {
-        setBlogs(blogs.concat(newBlog));
-        showNotification(
-          `a new blog ${newBlog.title} by ${newBlog.author} added`,
-          'success'
-        );
-      })
-      .catch((error) => {
-        showNotification('Blog creation failed', 'error');
-      });
+    newBlogMutation.mutate(blogObject);
   };
 
   const updateBlog = (updatedBlog) => {
-    setBlogs(
-      blogs.map((blog) => (blog.id === updatedBlog.id ? updatedBlog : blog))
+    const blogs = result.data || [];
+    const updatedBlogs = blogs.map((blog) =>
+      blog.id === updatedBlog.id ? updatedBlog : blog
     );
+    queryClient.setQueryData(['blogs'], updatedBlogs);
   };
 
   const removeBlog = (id) => {
-    setBlogs(blogs.filter((blog) => blog.id !== id));
+    const blogs = result.data || [];
+    queryClient.setQueryData(
+      ['blogs'],
+      blogs.filter((blog) => blog.id !== id)
+    );
   };
 
   const handleLogin = async (event) => {
@@ -117,6 +129,15 @@ const App = () => {
     );
   };
 
+  if (result.isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (result.isError) {
+    return <div>Error loading blogs: {result.error.message}</div>;
+  }
+
+  const blogs = result.data;
   const sortedBlogs = [...blogs].sort((a, b) => b.likes - a.likes);
 
   // console.log('user', user)
