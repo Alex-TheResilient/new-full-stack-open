@@ -9,14 +9,15 @@ import {
   removeBlog,
 } from './reducers/blogReducer';
 import { loginUser, logoutUser, initializeUser } from './reducers/userReducer';
-import Notification from './components/Notification';
 
+import Notification from './components/Notification';
 import Blog from './components/Blog';
 import LoginForm from './components/LoginForm';
 import BlogForm from './components/BlogForm';
 import Togglable from './components/Togglable';
 import Users from './components/Users';
 import UserView from './components/UserView';
+import BlogView from './components/BlogView';
 import './index.css';
 
 const App = () => {
@@ -141,8 +142,17 @@ const App = () => {
           <p>
             {user.name} logged in <button onClick={handleLogout}>logout</button>
           </p>
-          <div>
-            <Link to="/">blogs</Link> | <Link to="/users">users</Link>
+          <div
+            style={{
+              marginBottom: '20px',
+              padding: '10px',
+              background: '#f0f0f0',
+            }}
+          >
+            <Link to="/" style={{ marginRight: '10px' }}>
+              blogs
+            </Link>
+            <Link to="/users">users</Link>
           </div>
         </div>
 
@@ -156,24 +166,18 @@ const App = () => {
                 </Togglable>
 
                 {sortedBlogs.map((blog) => (
-                  <Blog
-                    key={blog.id}
-                    blog={blog}
-                    updateBlog={() => updateBlog(blog)}
-                    removeBlog={() =>
-                      handleRemoveBlog(blog.id, blog.title, blog.author)
-                    }
-                    user={user}
-                  />
+                  <Blog key={blog.id} blog={blog} />
                 ))}
               </div>
             }
           />
           <Route path="/users" element={<Users />} />
           <Route path="/users/:id" element={<UserView />} />
+          <Route path="/blogs/:id" element={<BlogView />} /> {/* Nueva ruta */}
         </Routes>
       </div>
     </Router>
   );
 };
+
 export default App;
